@@ -1,6 +1,7 @@
 use core::borrow;
 use std::rc::Rc;
 use std::cell::{Ref, RefCell};
+use std::ops::Deref;
 
 #[derive(Clone)]
 enum Connective {
@@ -24,25 +25,33 @@ fn represent_connective(c: &Connective) -> String {
 }
 
 #[derive(Clone)]
-struct Formula {
-    repr: String,
-    pub valuation: Option<bool>,
-    atomic: bool,
-    main_connective: Connective,
-    left: Option<Rc<RefCell<Formula>>>,
-    right: Option<Rc<RefCell<Formula>>>
-}
-
-#[derive(Clone)]
 struct FormulaRef(Option<Rc<RefCell<Formula>>>);
 
-impl FormulaRef{
-    
+impl Deref for FormulaRef {
+    type Target = Option<Rc<RefCell<Formula>>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-impl Formula {
-    fn print_wff(formula: Option<Rc<RefCell<Formula>>>,){
-        match formula{
+impl FormulaRef {
+    fn option(&self) -> Option<Rc<RefCell<Formula>>> {
+        return self.clone().0;
+    }
+
+    fn set_valuation (&self, value: bool) {
+        let unwrapped = self.option();
+
+        if let Some(f) = unwrapped {
+            let mut borrowed = f.borrow_mut();
+            borrowed.valuation = Some(value);
+        }
+    }
+
+    fn print_wff(formula_ref: FormulaRef){
+        let option = formula_ref.option();
+        match option{
             Some(f) => {
                 let borrowed = f.borrow();
                 match borrowed.valuation{
@@ -61,8 +70,49 @@ impl Formula {
         }
     }
 
-    fn repr_wff(connective: &Connective, left: Option<Rc<RefCell<Formula>>>, right: Option<Rc<RefCell<Formula>>>) -> String {
-        match (left, right) {
+    fn left_subformula(&self) -> FormulaRef {
+        let option = self.option();
+        match option{
+            Some(rc_refcell_formula) => {
+                let borrowed = rc_refcell_formula.borrow();
+                return borrowed.left.clone();
+            }
+            None => {
+                return FormulaRef(None)
+            }
+        }
+    }
+
+    fn right_subformula(&self) -> FormulaRef {
+        let option = self.option();
+        match option{
+            Some(rc_refcell_formula) => {
+                let borrowed = rc_refcell_formula.borrow();
+                return borrowed.right.clone();
+            }
+            None => {
+                return FormulaRef(None)
+            }
+        }
+    }
+}
+
+
+#[derive(Clone)]
+struct Formula {
+    repr: String,
+    pub valuation: Option<bool>,
+    atomic: bool,
+    main_connective: Connective,
+    left: FormulaRef,
+    right: FormulaRef
+}
+
+impl Formula {
+    fn repr_wff(connective: &Connective, left: FormulaRef, right: FormulaRef) -> String {
+        let left_option = left.option();
+        let right_option = right.option();
+        match (left_option, right_option) {
             (Some(left), Some(right)) => {
                 let borrowed_left = left.borrow();
                 let borrowed_right = right.borrow();
@@ -83,8 +133,8 @@ impl Formula {
            
     }
 
-    fn wrap_atomic(formula: Formula) -> Option<Rc<RefCell<Formula>>>{
-        return Some(Rc::new(RefCell::new(formula)));
+    fn wrap_atomic(formula: Formula) -> FormulaRef{
+        return FormulaRef(Some(Rc::new(RefCell::new(formula))));
     }
 
     fn build_atomic_wff(repr: String) -> Formula {
@@ -93,16 +143,16 @@ impl Formula {
             valuation: None,
             atomic: true,
             main_connective: Connective::Atomic,
-            left: None,
-            right: None,
+            left: FormulaRef(None),
+            right: FormulaRef(None),
         }
     }
 
-    fn build_wrapped_atomic_wff(repr: String) -> Option<Rc<RefCell<Formula>>> {
+    fn build_wrapped_atomic_wff(repr: String) -> FormulaRef {
         return Formula::wrap_atomic(Formula::build_atomic_wff(repr));
     }
 
-    fn build_wff(connective: Connective, left: Option<Rc<RefCell<Formula>>>, right: Option<Rc<RefCell<Formula>>>) -> Formula {
+    fn build_wff(connective: Connective, left: FormulaRef, right: FormulaRef) -> Formula {
         return Formula { 
             repr: Formula::repr_wff(&connective, left.clone(), right.clone()), 
             valuation: None, 
@@ -113,41 +163,30 @@ impl Formula {
         }
     }
 
-    fn build_wrapped_wff(connective: Connective, left: Option<Rc<RefCell<Formula>>>, right: Option<Rc<RefCell<Formula>>>) -> Option<Rc<RefCell<Formula>>> {
+    fn build_wrapped_wff(connective: Connective, left: FormulaRef, right: FormulaRef) -> FormulaRef {
         return Formula::wrap_atomic(Formula::build_wff(connective, left, right));
     }
 
-    fn left_subformula(&self) -> Option<Rc<RefCell<Formula>>> {
+    fn left_subformula(&self) -> FormulaRef {
         return self.left.clone();
     }
 
-    fn right_subformula(&self) -> Option<Rc<RefCell<Formula>>> {
+    fn right_subformula(&self) -> FormulaRef {
         return self.right.clone();
-    }
-
-    fn set_valuation (formula: Option<Rc<RefCell<Formula>>>, value: bool) {
-        if let Some(f) = formula {
-            let mut borrowed = f.borrow_mut();
-            borrowed.valuation = Some(value);
-        }
     }
 
 }
 
 
 fn main() {
-    let p : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_atomic_wff("p".to_string());
-    let q : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_atomic_wff("q".to_string());
-    let r : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_atomic_wff("r".to_string());
-    let p_and_q : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_wff(Connective::And, p.clone(), q.clone());
-    let r_implies_p_and_q : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_wff(Connective::Imp, r.clone(), p_and_q.clone());
-    let neg_r_implies_p_and_q : Option<Rc<RefCell<Formula>>> = Formula::build_wrapped_wff(Connective::Not, r_implies_p_and_q.clone(), None);
+    let p : FormulaRef = Formula::build_wrapped_atomic_wff("p".to_string());
+    let q : FormulaRef  = Formula::build_wrapped_atomic_wff("q".to_string());
+    let r : FormulaRef = Formula::build_wrapped_atomic_wff("r".to_string());
+    let p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::And, p.clone(), q.clone());
+    let r_implies_p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::Imp, r.clone(), p_and_q.clone());
+    let neg_r_implies_p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::Not, r_implies_p_and_q.clone(), FormulaRef(None));
     
-    Formula::print_wff(p.clone());
-    Formula::set_valuation(p.clone(), true);
-    Formula::print_wff(p_and_q);
-
-    
-
-    
+    FormulaRef::print_wff(p.clone());
+    p_and_q.left_subformula().set_valuation(false);
+    FormulaRef::print_wff(neg_r_implies_p_and_q.left_subformula().right_subformula().left_subformula());
 }
