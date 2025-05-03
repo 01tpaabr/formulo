@@ -1,6 +1,4 @@
-use std::hash::Hash;
 use std::rc::Rc;
-use std::cell::{Ref, RefCell};
 use std::ops::Deref;
 use std::fmt;
 use std::collections::HashMap;
@@ -88,14 +86,14 @@ impl Connective {
     }
 
     fn not_rules(val: TruthValue) -> TruthValue {
-        match (val){
-            (TruthValue::unassigned)=> {
+        match val{
+            TruthValue::unassigned => {
                 return TruthValue::unassigned;
             },
-            (TruthValue::T) => {
+            TruthValue::T => {
                 return TruthValue::F;
             },
-            (TruthValue::F) => {
+            TruthValue::F => {
                 return TruthValue::T;
             }
         }
@@ -106,7 +104,7 @@ impl Connective {
     }
 
     fn apply_connective(val1: TruthValue, val2: TruthValue, connective: Connective) -> TruthValue{
-        match(connective){
+        match connective{
             Connective::And => {
                 return Connective::and_rules(val1, val2);
             },
@@ -154,7 +152,7 @@ impl TruthValue {
         let all_valuations : Vec<TruthValue> = vec![TruthValue::T, TruthValue::F];
         let mut results_vector : Vec<Vec<TruthValue>> = vec![vec![TruthValue::T], vec![TruthValue::F]];
 
-        for i in 1..number_of_formulas{
+        for _ in 1..number_of_formulas{
             let mut added_combinations_vector: Vec<Vec<TruthValue>> = Vec::new();
 
             for path in results_vector.iter() {
@@ -171,51 +169,29 @@ impl TruthValue {
         }
         return results_vector;
     }
-
-    fn print_possible_options(number_of_formulas: i32){
-        println!("{}", TruthValue::generate_possible_options_aux(number_of_formulas).iter().map(
-            |truth_value_vec| truth_value_vec.iter().map(
-                |truth_value| truth_value.to_string()
-            ).collect::<Vec<String>>().join(",")
-        ).collect::<Vec<String>>().join("\n"));
-    }
 }
 
 #[derive(Clone)]
-struct FormulaRef(Option<Rc<RefCell<Formula>>>);
+struct FormulaRef(Option<Rc<Formula>>);
 
 impl Deref for FormulaRef {
-    type Target = Option<Rc<RefCell<Formula>>>;
+    type Target = Option<Rc<Formula>>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self
     }
 }
 
 impl FormulaRef {
-    fn option(&self) -> Option<Rc<RefCell<Formula>>> {
+    fn option(&self) -> Option<Rc<Formula>> {
         return self.clone().0;
-    }
-
-    fn set_valuation (&self, value: TruthValue) {
-        let unwrapped = self.option();
-
-        if let Some(f) = unwrapped {
-            let mut borrowed = f.borrow_mut();
-            borrowed.valuation = value;
-        }
     }
 
     fn print_wff(formula_ref: FormulaRef){
         let formula_option = formula_ref.option();
         match formula_option{
             Some(f) => {
-                let borrowed = f.borrow();
-                match &borrowed.valuation{
-                    value => {
-                        println!("{} : {}", borrowed.repr, value.to_string());
-                    }
-                }
+                println!("{}", f.repr);
             }
             None => {
                 println!("None");
@@ -226,9 +202,8 @@ impl FormulaRef {
     fn main_connective(&self) -> Connective {
         let formula_option = self.option();
         match formula_option{
-            Some(rc_refcell_formula) => {
-                let borrowed = rc_refcell_formula.borrow();
-                return borrowed.main_connective;
+            Some(rc_f) => {
+                return rc_f.clone().main_connective;
             }
             None => {
                 return Connective::Atomic;
@@ -239,9 +214,8 @@ impl FormulaRef {
     fn repr(&self) -> String{
         let formula_option = self.option();
         match formula_option{
-            Some(rc_refcell_formula) => {
-                let borrowed = rc_refcell_formula.borrow();
-                return borrowed.repr.clone();
+            Some(rc_f) => {
+                return rc_f.repr.clone();
             }
             None => {
                 return "".to_string();
@@ -252,9 +226,8 @@ impl FormulaRef {
     fn left_subformula(&self) -> FormulaRef {
         let formula_option = self.option();
         match formula_option{
-            Some(rc_refcell_formula) => {
-                let borrowed = rc_refcell_formula.borrow();
-                return borrowed.left.clone();
+            Some(rc_f) => {
+                return rc_f.left.clone();
             }
             None => {
                 return FormulaRef(None)
@@ -265,9 +238,8 @@ impl FormulaRef {
     fn right_subformula(&self) -> FormulaRef {
         let formula_option = self.option();
         match formula_option{
-            Some(rc_refcell_formula) => {
-                let borrowed = rc_refcell_formula.borrow();
-                return borrowed.right.clone();
+            Some(rc_f) => {
+                return rc_f.right.clone();
             }
             None => {
                 return FormulaRef(None)
@@ -277,11 +249,8 @@ impl FormulaRef {
 }
 
 
-#[derive(Clone)]
 struct Formula {
     repr: String,
-    pub valuation: TruthValue,
-    atomic: bool,
     main_connective: Connective,
     left: FormulaRef,
     right: FormulaRef
@@ -293,17 +262,13 @@ impl Formula {
         let right_option = right.option();
         match (left_option, right_option) {
             (Some(left), Some(right)) => {
-                let borrowed_left = left.borrow();
-                let borrowed_right = right.borrow();
-                return format!("({} {} {})", borrowed_left.repr, connective.to_string(), borrowed_right.repr)
+                return format!("({} {} {})", left.repr, connective.to_string(), right.repr)
             }
             (Some(left), None) => {
-                let borrowed_left = left.borrow();
-                return format!("{}{}", connective.to_string(), borrowed_left.repr) 
+                return format!("{}{}", connective.to_string(), left.repr) 
             }
             (None, Some(right)) => {
-                let borrowed_right = right.borrow();
-                return format!("{}{}", connective.to_string(), borrowed_right.repr) 
+                return format!("{}{}", connective.to_string(), right.repr) 
             }
             (None, None) => {
                 return "".to_string()
@@ -313,14 +278,12 @@ impl Formula {
     }
 
     fn wrap_atomic(formula: Formula) -> FormulaRef{
-        return FormulaRef(Some(Rc::new(RefCell::new(formula))));
+        return FormulaRef(Some(Rc::new(formula)));
     }
 
     fn build_atomic_wff(repr: String) -> Formula {
         return Formula {
             repr : repr,
-            valuation: TruthValue::unassigned,
-            atomic: true,
             main_connective: Connective::Atomic,
             left: FormulaRef(None),
             right: FormulaRef(None),
@@ -334,8 +297,6 @@ impl Formula {
     fn build_wff(connective: Connective, left: FormulaRef, right: FormulaRef) -> Formula {
         return Formula { 
             repr: Formula::repr_wff(&connective, left.clone(), right.clone()), 
-            valuation: TruthValue::unassigned, 
-            atomic: false, 
             main_connective: connective, 
             left: left,
             right: right
@@ -387,7 +348,7 @@ impl TruthTable {
         return columns_refs.iter().map(
             |formula_ref| {
                 match formula_ref.option() {
-                    Some(rc_refcell_formula) => rc_refcell_formula.borrow().repr.clone(),
+                    Some(rc_f) => rc_f.repr.clone(),
                     None => "".to_string(),
                 }
             }
@@ -410,7 +371,7 @@ impl TruthTable {
     fn add_compound_formula(&mut self, compound_formula: FormulaRef){
         let formulas_positions_in_columns: HashMap<String, i32> = self.formulas_positions_in_columns();
 
-        match(compound_formula.main_connective()){
+        match compound_formula.main_connective(){
             Connective::Not => {
                 if None == formulas_positions_in_columns.get(&compound_formula.left_subformula().repr()){
                     panic!("Subformulas of Formula [{}] are not present in this TruthTable", compound_formula.repr());
@@ -441,11 +402,11 @@ impl TruthTable {
     fn build_final_truth_table(&self) -> (Vec<FormulaRef>, Vec<Vec<TruthValue>>){
         let amount_of_atoms = self.amount_of_atoms();
 
-        let mut columns_heads : Vec<FormulaRef> = self.columns_heads();
+        let columns_heads : Vec<FormulaRef> = self.columns_heads();
         let mut truth_values : Vec<Vec<TruthValue>> = TruthValue::generate_possible_options_aux(amount_of_atoms);
 
         // (Formula repr, position in columns)
-        let mut formulas_positions_in_columns : HashMap<String, i32> = self.formulas_positions_in_columns();
+        let formulas_positions_in_columns : HashMap<String, i32> = self.formulas_positions_in_columns();
         
         // Compound formulas are ordered in less_complex -> most_complex (left -> right)
         let starting_compound_formulas_position = amount_of_atoms;
@@ -457,8 +418,8 @@ impl TruthTable {
 
 
             // Add the value of compound formula in each value_row
-            for mut truth_row in truth_values.iter_mut(){
-                match(current_main_connective){
+            for truth_row in truth_values.iter_mut(){
+                match current_main_connective{
                     // Can't be atomic formula, so just checks for Not connective
                     Connective::Not => {
                         let left_subformula: FormulaRef = current_compound_formula.left_subformula();
@@ -541,6 +502,7 @@ fn main() {
     let p : FormulaRef = Formula::build_wrapped_atomic_wff("p".to_string());
     let q : FormulaRef  = Formula::build_wrapped_atomic_wff("q".to_string());
     let r : FormulaRef = Formula::build_wrapped_atomic_wff("r".to_string());
+    let s : FormulaRef = Formula::build_wrapped_atomic_wff("s".to_string());
     let p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::And, p.clone(), q.clone());
     let r_implies_p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::Imp, r.clone(), p_and_q.clone());
     let neg_r_implies_p_and_q : FormulaRef = Formula::build_wrapped_wff(Connective::Not, r_implies_p_and_q.clone(), FormulaRef(None));
