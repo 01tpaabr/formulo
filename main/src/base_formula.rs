@@ -1,25 +1,17 @@
 use crate::connective::Connective;
-use std::rc::Rc;
-use std::ops::Deref;
 
 #[derive(Clone)]
 pub struct FormulaRef (
-    pub Option<Rc<Formula>>
+    pub Option<Box<Formula>>
 );
 
-impl Deref for FormulaRef {
-    type Target = Option<Rc<Formula>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self
-    }
-}
 
 impl FormulaRef {
-    pub fn option(&self) -> Option<Rc<Formula>> {
+    pub fn option(&self) -> Option<Box<Formula>> {
         return self.clone().0;
     }
 
+    #[allow(dead_code)]
     fn print_wff(formula_ref: FormulaRef){
         let formula_option = formula_ref.option();
         match formula_option{
@@ -81,7 +73,7 @@ impl FormulaRef {
     }
 }
 
-
+#[derive(Clone)]
 pub struct Formula {
     pub repr: String,
     main_connective: Connective,
@@ -111,7 +103,7 @@ impl Formula {
     }
 
     fn wrap_atomic(formula: Formula) -> FormulaRef{
-        return FormulaRef(Some(Rc::new(formula)));
+        return FormulaRef(Some(Box::new(formula)));
     }
 
     fn build_atomic_wff(repr: String) -> Formula {
@@ -130,14 +122,16 @@ impl Formula {
     fn build_wff(connective: Connective, left: FormulaRef, right: FormulaRef) -> Formula {
         return Formula { 
             repr: Formula::repr_wff(&connective, left.clone(), right.clone()), 
-            main_connective: connective, 
+            main_connective: connective,
             left: left,
             right: right
         }
     }
 
-    pub fn build_wrapped_wff(connective: Connective, left: FormulaRef, right: FormulaRef) -> FormulaRef {
-        return Formula::wrap_atomic(Formula::build_wff(connective, left, right));
+    pub fn build_wrapped_wff(connective: Connective, left: &FormulaRef, right: &FormulaRef) -> FormulaRef {
+        let cloned_left: FormulaRef = left.clone();
+        let cloned_right: FormulaRef = right.clone();
+        return Formula::wrap_atomic(Formula::build_wff(connective, cloned_left, cloned_right));
     }
 
 }

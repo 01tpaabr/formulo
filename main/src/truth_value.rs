@@ -4,7 +4,7 @@ use std::fmt;
 pub enum TruthValue {
     T,
     F,
-    unassigned,
+    Unassigned,
 }
 
 impl fmt::Display for TruthValue {
@@ -12,7 +12,7 @@ impl fmt::Display for TruthValue {
         let s = match self {
             TruthValue::T => "T",
             TruthValue::F => "F",
-            TruthValue::unassigned => "unassigned",
+            TruthValue::Unassigned => "Unassigned",
         };
         write!(f, "{}", s)
     }

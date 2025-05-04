@@ -1,6 +1,6 @@
 use crate::truth_value::TruthValue;
 use crate::connective::Connective;
-use crate::base_formula::{FormulaRef, Formula};
+use crate::base_formula::FormulaRef;
 use std::collections::HashMap;
 
 pub struct TruthTable {
@@ -9,9 +9,11 @@ pub struct TruthTable {
 }
 
 impl TruthTable {
-    pub fn build_base_truth_table(atoms: Vec<FormulaRef>) -> TruthTable{
+    pub fn build_base_truth_table(atoms: Vec<&FormulaRef>) -> TruthTable{
+        let cloned_atoms: Vec<FormulaRef> = atoms.iter().map(|atom_ref: &&FormulaRef| (*atom_ref).clone()).collect();
+
         return TruthTable{
-            atoms: atoms, 
+            atoms: cloned_atoms, 
             compound_formulas: Vec::new()
         }; 
     }
@@ -22,10 +24,6 @@ impl TruthTable {
 
     fn amount_of_compound_formulas(&self) -> i32 {
         return self.compound_formulas.len().try_into().unwrap();
-    }
-
-    fn amount_of_value_rows(&self) -> i32 {
-        return 2i32.pow(self.atoms.len().try_into().unwrap());
     }
 
     fn columns_heads(&self) -> Vec<FormulaRef>{
@@ -62,36 +60,39 @@ impl TruthTable {
         return formulas_positions_in_columns;
     }
 
-    pub fn add_compound_formula(&mut self, compound_formula: FormulaRef){
+    pub fn add_compound_formula(&mut self, compound_formula: &FormulaRef){
         let formulas_positions_in_columns: HashMap<String, i32> = self.formulas_positions_in_columns();
+        let cloned_coumpond_formula = compound_formula.clone();
 
-        match compound_formula.main_connective(){
+        match cloned_coumpond_formula.main_connective(){
             Connective::Not => {
-                if None == formulas_positions_in_columns.get(&compound_formula.left_subformula().repr()){
-                    panic!("Subformulas of Formula [{}] are not present in this TruthTable", compound_formula.repr());
+                if None == formulas_positions_in_columns.get(&cloned_coumpond_formula.left_subformula().repr()){
+                    panic!("Subformulas of Formula [{}] are not present in this TruthTable", cloned_coumpond_formula.repr());
                 }
             },
             _ => {
-                if None == formulas_positions_in_columns.get(&compound_formula.left_subformula().repr())
-                || None == formulas_positions_in_columns.get(&compound_formula.right_subformula().repr()){
-                    panic!("Subformulas of Formula [{}] are not present in this TruthTable", compound_formula.repr());
+                if None == formulas_positions_in_columns.get(&cloned_coumpond_formula.left_subformula().repr())
+                || None == formulas_positions_in_columns.get(&cloned_coumpond_formula.right_subformula().repr()){
+                    panic!("Subformulas of Formula [{}] are not present in this TruthTable", cloned_coumpond_formula.repr());
                 }
             }
         }
         
 
-        self.compound_formulas.push(compound_formula);
+        self.compound_formulas.push(cloned_coumpond_formula);
     }
 
-   
+    // fn amount_of_value_rows(&self) -> i32 {
+    //     return 2i32.pow(self.atoms.len().try_into().unwrap());
+    // }
 
-    fn columns_heads_string(&self) -> String {
-        return self.columns_heads_repr().join(" | ");
-    }
+    // fn columns_heads_string(&self) -> String {
+    //     return self.columns_heads_repr().join(" | ");
+    // }
 
-    fn amount_of_columns(&self) -> i32 {
-        return self.columns_heads().len().try_into().unwrap();
-    }
+    // fn amount_of_columns(&self) -> i32 {
+    //     return self.columns_heads().len().try_into().unwrap();
+    // }
 
     fn build_final_truth_table(&self) -> (Vec<FormulaRef>, Vec<Vec<TruthValue>>){
         let amount_of_atoms = self.amount_of_atoms();
@@ -170,6 +171,7 @@ impl TruthTable {
         return centered_string
     }
 
+    #[allow(dead_code)]
     pub fn print_final_truth_table(&self) {
         let (_, truth_values) = self.build_final_truth_table();
         let columns_heads_repr = self.columns_heads_repr();

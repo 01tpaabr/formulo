@@ -28,8 +28,8 @@ impl fmt::Display for Connective {
 impl Connective {
     fn and_rules(val1: TruthValue, val2: TruthValue) -> TruthValue {
         match (val1, val2){
-            (TruthValue::unassigned, _) | (_, TruthValue::unassigned) => {
-                return TruthValue::unassigned;
+            (TruthValue::Unassigned, _) | (_, TruthValue::Unassigned) => {
+                return TruthValue::Unassigned;
             },
             (TruthValue::T, TruthValue::T) => {
                 return TruthValue::T;
@@ -42,8 +42,8 @@ impl Connective {
 
     fn or_rules(val1: TruthValue, val2: TruthValue) -> TruthValue {
         match (val1, val2){
-            (TruthValue::unassigned, _) | (_, TruthValue::unassigned) => {
-                return TruthValue::unassigned;
+            (TruthValue::Unassigned, _) | (_, TruthValue::Unassigned) => {
+                return TruthValue::Unassigned;
             },
             (TruthValue::F, TruthValue::F) => {
                 return TruthValue::F;
@@ -56,8 +56,8 @@ impl Connective {
 
     fn imp_rules(val1: TruthValue, val2: TruthValue) -> TruthValue {
         match (val1, val2){
-            (TruthValue::unassigned, _) | (_, TruthValue::unassigned) => {
-                return TruthValue::unassigned;
+            (TruthValue::Unassigned, _) | (_, TruthValue::Unassigned) => {
+                return TruthValue::Unassigned;
             },
             (TruthValue::T, TruthValue::F) => {
                 return TruthValue::F;
@@ -70,8 +70,8 @@ impl Connective {
 
     fn bi_imp_rules(val1: TruthValue, val2: TruthValue) -> TruthValue {
         match (val1, val2){
-            (TruthValue::unassigned, _) | (_, TruthValue::unassigned) => {
-                return TruthValue::unassigned;
+            (TruthValue::Unassigned, _) | (_, TruthValue::Unassigned) => {
+                return TruthValue::Unassigned;
             },
             (TruthValue::T, TruthValue::T) | (TruthValue::F, TruthValue::F) => {
                 return TruthValue::T;
@@ -84,8 +84,8 @@ impl Connective {
 
     pub fn not_rules(val: TruthValue) -> TruthValue {
         match val{
-            TruthValue::unassigned => {
-                return TruthValue::unassigned;
+            TruthValue::Unassigned => {
+                return TruthValue::Unassigned;
             },
             TruthValue::T => {
                 return TruthValue::F;
@@ -94,10 +94,6 @@ impl Connective {
                 return TruthValue::T;
             }
         }
-    }
-
-    fn atomic_rules(val : TruthValue) -> TruthValue{
-        return val;
     }
 
     pub fn apply_connective(val1: TruthValue, val2: TruthValue, connective: Connective) -> TruthValue{
@@ -115,10 +111,10 @@ impl Connective {
                 return Connective::bi_imp_rules(val1, val2);
             },
             Connective::Not => {
-                return TruthValue::unassigned;
+                return TruthValue::Unassigned;
             },
             Connective::Atomic => {
-                return TruthValue::unassigned;
+                return TruthValue::Unassigned;
             }
         }
     }
