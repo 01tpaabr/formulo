@@ -3,6 +3,8 @@ use crate::connective::Connective;
 use crate::base_formula::FormulaRef;
 use std::collections::HashMap;
 
+// Provide analysis for all possible truth values for formulas
+
 pub struct TruthTable {
     atoms: Vec<FormulaRef>,
     compound_formulas: Vec<FormulaRef>, 
@@ -81,18 +83,6 @@ impl TruthTable {
 
         self.compound_formulas.push(cloned_coumpond_formula);
     }
-
-    // fn amount_of_value_rows(&self) -> i32 {
-    //     return 2i32.pow(self.atoms.len().try_into().unwrap());
-    // }
-
-    // fn columns_heads_string(&self) -> String {
-    //     return self.columns_heads_repr().join(" | ");
-    // }
-
-    // fn amount_of_columns(&self) -> i32 {
-    //     return self.columns_heads().len().try_into().unwrap();
-    // }
 
     fn build_final_truth_table(&self) -> (Vec<FormulaRef>, Vec<Vec<TruthValue>>){
         let amount_of_atoms = self.amount_of_atoms();

@@ -2,6 +2,7 @@ mod connective;
 mod truth_value;
 mod base_formula;
 mod truth_table;
+mod tableau;
 
 use base_formula::{Formula, FormulaRef};
 use connective::Connective;

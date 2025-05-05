@@ -1,7 +1,7 @@
 use crate::truth_value::TruthValue;
 use std::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Connective {
     And,
     Or,
@@ -118,4 +118,39 @@ impl Connective {
             }
         }
     }
+}
+
+pub trait ConnectiveType {
+    const CONNECTIVE: Connective;
+}
+
+pub struct AndType;
+pub struct OrType;
+pub struct NotType;
+pub struct ImpType;
+pub struct BiImpType;
+pub struct AtomicType;
+
+impl ConnectiveType for AndType {
+    const CONNECTIVE: Connective = Connective::And;
+}
+
+impl ConnectiveType for OrType {
+    const CONNECTIVE: Connective = Connective::Or;
+}
+
+impl ConnectiveType for NotType {
+    const CONNECTIVE: Connective = Connective::Not;
+}
+
+impl ConnectiveType for ImpType {
+    const CONNECTIVE: Connective = Connective::Imp;
+}
+
+impl ConnectiveType for BiImpType {
+    const CONNECTIVE: Connective = Connective::BiImp;
+}
+
+impl ConnectiveType for AtomicType {
+    const CONNECTIVE: Connective = Connective::Atomic;
 }

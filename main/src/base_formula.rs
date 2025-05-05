@@ -1,4 +1,4 @@
-use crate::connective::Connective;
+use crate::connective::{Connective};
 
 #[derive(Clone)]
 pub struct FormulaRef (
@@ -74,7 +74,7 @@ impl FormulaRef {
 }
 
 #[derive(Clone)]
-pub struct Formula {
+pub struct Formula{
     pub repr: String,
     main_connective: Connective,
     left: FormulaRef,
