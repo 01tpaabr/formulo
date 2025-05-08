@@ -1,1 +1,1 @@
-/home/thiago-andrade/my/formulo/main/target/debug/main: /home/thiago-andrade/my/formulo/main/src/base_formula.rs /home/thiago-andrade/my/formulo/main/src/connective.rs /home/thiago-andrade/my/formulo/main/src/main.rs /home/thiago-andrade/my/formulo/main/src/truth_table.rs /home/thiago-andrade/my/formulo/main/src/truth_value.rs
+/home/thiago/formulo/main/target/debug/main: /home/thiago/formulo/main/src/main.rs /home/thiago/formulo/main/src/syntax.rs
